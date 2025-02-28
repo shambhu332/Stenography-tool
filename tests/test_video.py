@@ -7,31 +7,27 @@ import unittest
 
 class TestVideoSteganography(unittest.TestCase):
     def setUp(self):
-        self.test_video = "tests/test_video.avi"
+        self.test_video = "tests/test_video.avi"  # Ensure this file exists
         self.encoded_video = "tests/encoded_video.avi"
         self.message = "Secret Message"
 
     def test_encode_decode(self):
-        # Test encoding to a new file
         VideoSteganography.encode(self.test_video, self.message, self.encoded_video)
         decoded_message = VideoSteganography.decode(self.encoded_video)
         self.assertEqual(self.message, decoded_message)
 
     def test_append_data(self):
-        # Test appending new data to an existing file
         existing_message = "Existing Message"
+        # First encode without appending
         VideoSteganography.encode(self.test_video, existing_message, self.encoded_video)
-        
-        # Encode again with a different message
-        VideoSteganography.encode(self.encoded_video, self.message, self.encoded_video)
+        # Append new message
+        VideoSteganography.encode(self.encoded_video, self.message, self.encoded_video, append=True)
         decoded_message = VideoSteganography.decode(self.encoded_video)
         self.assertEqual(f"{existing_message}\n{self.message}", decoded_message)
 
     def test_replace_data(self):
-        # Test replacing existing data with the same message
         VideoSteganography.encode(self.test_video, self.message, self.encoded_video)
-        
-        # Encode again with the same message
+        # Replace message (default behavior)
         VideoSteganography.encode(self.encoded_video, self.message, self.encoded_video)
         decoded_message = VideoSteganography.decode(self.encoded_video)
         self.assertEqual(self.message, decoded_message)
