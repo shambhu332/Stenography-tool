@@ -47,16 +47,18 @@ class VideoSteganography:
         return frame_count * height * width * 3  # 3 channels per pixel
 
     @staticmethod
-    def encode(video_path: str, message: str, output_path: str, key: str = None) -> None:
+    def encode(video_path: str, message: str, output_path: str, key: str = None, append: bool = False) -> None:
         """Encode message with cross-device safe file operations"""
         output_path = os.path.splitext(output_path)[0] + '.avi'
         temp_path = None
         temp_dir = os.path.dirname(output_path) or '.'  # Use output directory for temp files
+        cap = None
+        out = None  # Initialize variables to avoid UnboundLocalError
         
         try:
-            # Handle existing messages
+            # Handle existing messages only in append mode and file exists
             existing_message = ""
-            if os.path.exists(output_path):
+            if append and os.path.exists(output_path):
                 try:
                     existing_message = VideoSteganography.decode(output_path, key)
                 except Exception as e:
@@ -73,10 +75,15 @@ class VideoSteganography:
             binary_msg = ''.join(f"{ord(c):08b}" for c in combined_message)
             full_msg = f"{len(binary_msg):064b}" + binary_msg
 
+            # Handle input source for append mode
+            input_source = video_path
+            if append and os.path.exists(output_path):
+                input_source = output_path
+
             # Open input video
-            cap = cv2.VideoCapture(video_path)
+            cap = cv2.VideoCapture(input_source)
             if not cap.isOpened():
-                raise ValueError("Could not open input video")
+                raise ValueError(f"Could not open input video: {input_source}")
 
             # Verify capacity
             capacity = VideoSteganography._get_video_capacity(cap)
@@ -128,7 +135,8 @@ class VideoSteganography:
                 os.remove(temp_path)
             raise
         finally:
-            if cap.isOpened():
+            # Properly release resources
+            if cap and cap.isOpened():
                 cap.release()
             if out and out.isOpened():
                 out.release()
